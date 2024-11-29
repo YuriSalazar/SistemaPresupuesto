@@ -12,6 +12,10 @@ class Responsable(models.Model):
     estado = models.PositiveSmallIntegerField(verbose_name='Estado', default=1)
     class Meta:
         verbose_name_plural = 'Responsables'
+        # permissions = [
+        #     ("puede_aprobar", "Puede aprobar registros"),
+        #     ("puede_rechazar", "Puede recharse registros"),
+        # ]
 
     def __str__(self):
         return f"{self.codigo} - {self.cedula} - {self.nombreCompleto} - {self.correo} - {self.telefono} - {self.activo}"

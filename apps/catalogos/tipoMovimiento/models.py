@@ -7,6 +7,10 @@ class TipoMovimiento(models.Model):
     descripcion = models.CharField(verbose_name='Descripcion', max_length=50)
     class Meta:
         verbose_name_plural = 'Tipos de Movimientos'
+        # permissions = [
+        #     ("puede_aprobar", "Puede aprobar registros"),
+        #     ("puede_rechazar", "Puede recharse registros"),
+        # ]
 
     def __str__(self):
         return f"{self.codigo} - {self.descripcion}"

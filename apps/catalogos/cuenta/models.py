@@ -1,5 +1,4 @@
 from django.db import models
-
 from apps.catalogos.tipoMovimiento.models import TipoMovimiento
 
 """
@@ -13,6 +12,11 @@ class Cuenta(models.Model):
     tipoMovimiento = models.ForeignKey(TipoMovimiento, verbose_name='Tipo de Movimiento', on_delete=models.PROTECT)
     class Meta:
         verbose_name_plural = 'Cuentas'
+        # permissions = [
+        #     ("puede_aprobar", "Puede aprobar registros"),
+        #     ("puede_rechazar", "Puede recharse registros"),
+        # ]
+
     def __str__(self):
         return f"{self.numeroCuenta} - {self.descripcion} - {self.activo}"
 # Create your models here.

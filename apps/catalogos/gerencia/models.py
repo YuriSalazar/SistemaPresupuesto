@@ -13,6 +13,11 @@ class Gerencia(models.Model):
     responsable = models.ForeignKey(Responsable, verbose_name='Responsable', on_delete=models.PROTECT)
     class Meta:
         verbose_name_plural = 'Gerencias'
+        # permissions = [
+        #     ("puede_aprobar", "Puede aprobar registros"),
+        #     ("puede_rechazar", "Puede recharse registros"),
+        # ]
+
     def __str__(self):
         return f"{self.codigo} - {self.descripcion} - {self.activo}"
 

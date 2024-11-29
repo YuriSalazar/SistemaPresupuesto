@@ -1,4 +1,5 @@
 from django.db import models
+
 """
 Anio
 """
@@ -7,6 +8,10 @@ class Anio(models.Model):
     anio = models.IntegerField(verbose_name='Año', unique=True)
     class Meta:
         verbose_name_plural = 'Años'
+        # permissions = [
+        #     ("puede_aprobar", "Puede aprobar registros"),
+        #     ("puede_rechazar", "Puede recharse registros"),
+        # ]
 
     def __str__(self):
         return f"{self.codigo} - {self.anio}"

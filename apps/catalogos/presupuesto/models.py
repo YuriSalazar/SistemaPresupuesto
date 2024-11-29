@@ -12,6 +12,11 @@ class Presupuesto(models.Model):
 
     class Meta:
         verbose_name_plural = 'Presupuestos'
+        # permissions = [
+        #     ("puede_aprobar", "Puede aprobar registros"),
+        #     ("puede_rechazar", "Puede recharse registros"),
+        # ]
+
     def __str__(self):
         return f"{self.codigo} - {self.descripcion} - {self.fechaInicio} - {self.fechaFin} - {self.activo}"
 # Create your models here.

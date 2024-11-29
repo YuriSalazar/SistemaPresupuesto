@@ -11,13 +11,14 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
-
 from django.conf.global_settings import AUTH_USER_MODEL
-
+from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 from apps.catalogos.setting_apps import CATALOGOS_SETTING_APPS
 from apps.seguridad.setting_apps import SEGURIDAD_SETTING_APPS
+from apps.movimientos.setting_apps import MOVIMIENTOS_APPS
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -26,9 +27,9 @@ from apps.seguridad.setting_apps import SEGURIDAD_SETTING_APPS
 SECRET_KEY = 'django-insecure-du_l9%%e&cg2b6)g5h%r0#a576&d-(z6tg_9i)e1-g*-_vx)%l'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
 
-ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -40,7 +41,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-] + SEGURIDAD_SETTING_APPS + CATALOGOS_SETTING_APPS
+    'rest_framework',
+    'drf_yasg',
+    'rest_framework_simplejwt'
+] + SEGURIDAD_SETTING_APPS + CATALOGOS_SETTING_APPS+MOVIMIENTOS_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -53,6 +57,8 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'config.urls'
+
+APPEND_SLASH = True
 
 TEMPLATES = [
     {
@@ -115,6 +121,30 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication', #Usar JWT pra la autenticacion
+    ),
+     'DEFAULT_PERMISSION_CLASSES': (
+         'rest_framework.permissions.IsAuthenticated',
+         'rest_framework.permissions.DjangoModelPermissions', # Verificar permisos estandar de Django
+     ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+}
+
+# Configuracion de JWT
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=40),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY, # Asegurate de cambiar esto por una clave secreta real
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
