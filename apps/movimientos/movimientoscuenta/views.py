@@ -1,3 +1,4 @@
+from http.client import responses
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -11,6 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from ...permissions import CustomPermission
 from config.utils.Pagination import PaginationMixin
 import logging.handlers
+from django.db import connection # Para llamar procedimiento almacenado
 
 # Configura el logger
 logger = logging.getLogger(__name__)
@@ -106,3 +108,90 @@ class MovimientoCuentaDetails(APIView):
         DetalleMovimientoCuenta.objects.filter(movimientocuenta=movimientoc).update(estado=0)
         logger.info("Movimientos de Cuentas deleted successfully with ID: %s", pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class MovimientoCuentaReporte(PaginationMixin, APIView):
+    """
+    Vista para listar todos los movimientos de las cuentas.
+    """
+    permission_classes = [IsAuthenticated, CustomPermission]
+    model = MovimientoCuenta
+
+    @swagger_auto_schema(responses={200: MovimientoCuentaSerializer(many=True)})
+    def get(self, request):
+        """
+        Listar todos los movimientos de las cuentas con su detalle ejecutando un procedimiento almacenado y devolviendo JSON directamente.
+        """
+        try:
+            # Llama al procedimiento almacenado usando cursor.execute
+            with connection.cursor() as cursor:
+                # Ejecuta el procedimiento almacenado
+                cursor.execute("EXEC usp_GetMovimientosCuentaConDetalles")
+
+                # Obtén los nombres de las columnas
+                columns = [col[0] for col in cursor.description]
+
+                # Obtén los datos y mapea con los nombres de las columnas
+                results = [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+                # Construye manualmente el JSON
+
+                movimientocuenta_json = [
+                   {
+                       "presupuesto": item["presupuesto"],
+                       "gerencia": item["gerencia"],
+                       "cuenta": item["cuenta"],
+                       "usuario": item["usuario"],
+                       "mes": item["mes"],
+                       "concepto": item["concepto"],
+                       "monto": item["monto"]
+                   }
+                   for item in results
+                ]
+
+            # Serializa los datos
+            logger.info("Stored procedure executed successfully")
+            return Response(movimientocuenta_json, status=200)
+
+        except Exception as e:
+            logger.error(f"Error executing stored procedure: {str(e)}")
+            return Response({"Error": str(e)}, status=500)
+
+
+class MovimientoCuentaDetailsReporte(APIView):
+    """
+    Vista para obtener los detalles de un movimiento de cuenta específico junto con sus detalles (maestro-detalle).
+    """
+    permission_classes = [IsAuthenticated, CustomPermission]
+    model = MovimientoCuenta
+
+    def get(self, request, movimientocuenta_id):
+        logger.info(f"GET request to get movimiento cuenta details with id={movimientocuenta_id}")
+        try:
+            with connection.cursor() as cursor:
+                # Ejecuta el procedimiento almacenado con un parámetro
+                cursor.execute("EXEC usp_GetMovimientoCuentaEspecifica @movimientocuentaID = %s", [movimientocuenta_id])
+
+                # Primer conjunto de resultados: Información general del movimiento de cuenta
+                movimientocuenta_row = cursor.fetchone()
+                if not movimientocuenta_row:
+                    logger.error(f"No data found for movimiento cuenta ID={movimientocuenta_id}")
+                    return Response({"error": "Movimiento de cuenta no encontrado"}, status=404)
+
+                # Obtén los nombres de las columnas del primer conjunto
+                movimientocuenta_columns = [col[0] for col in cursor.description]
+                movimientocuenta_info = dict(zip(movimientocuenta_columns, movimientocuenta_row))
+
+                # Cambiar al segundo conjunto de resultados: Detalles del movimiento
+                cursor.nextset()
+                detalle_columns = [col[0] for col in cursor.description]
+                detalles = [dict(zip(detalle_columns, row)) for row in cursor.fetchall()]
+
+                # Construir el JSON final
+                movimientocuenta_info["detalles"] = detalles
+
+            logger.info("Stored procedure executed successfully for movimiento cuenta details")
+            return Response(movimientocuenta_info, status=200)
+
+        except Exception as e:
+            logger.error(f"Error executing stored procedure: {str(e)}", exc_info=True)
+            return Response({"error": "Error ejecutando el procedimiento almacenado"}, status=500)
