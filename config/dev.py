@@ -3,7 +3,7 @@ from decouple import config
 from .utils.logging_config import ANSIColorFormatter
 
 DEBUG = True
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost','b48d-2803-2d60-1107-1f57-496f-9929-4f45-6d86.ngrok-free.app']
 
 DATABASES = {
     'default': {

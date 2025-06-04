@@ -18,7 +18,7 @@ class ResponsableApiView(PaginationMixin, APIView):
     """
     Vista para listar todos los responsables o crear un nuevo responsable
     """
-    permission_classes = [IsAuthenticated, CustomPermission]
+    #permission_classes = [IsAuthenticated, CustomPermission]
     model=Responsable
 
     @swagger_auto_schema(responses={200: ResponsableSerializer(many=True)})
@@ -57,7 +57,7 @@ class ResponsableDetails(APIView):
     """
     Vista para obtener, actualizar o eliminar un responsable especifico.
     """
-    permission_classes = [IsAuthenticated, CustomPermission]
+    #permission_classes = [IsAuthenticated, CustomPermission]
     model=Responsable
 
     @swagger_auto_schema(responses={200: ResponsableSerializer()})

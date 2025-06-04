@@ -18,7 +18,7 @@ class GerenciaApiView(PaginationMixin, APIView):
     """
     Vista para listar todas las gerencias o crear una nueva gerencia
     """
-    permission_classes = [IsAuthenticated, CustomPermission]
+    # permission_classes = [IsAuthenticated, CustomPermission]
     model=Gerencia
 
     @swagger_auto_schema(responses={200: GerenciaSerializer(many=True)})
@@ -58,7 +58,7 @@ class GerenciaDetails(APIView):
     Vista para obtener, actualizar o eliminar una gerencia especifica.
     """
 
-    permission_classes = [IsAuthenticated, CustomPermission]
+   # permission_classes = [IsAuthenticated, CustomPermission]
     model=Gerencia
 
     @swagger_auto_schema(responses={200: GerenciaSerializer()})

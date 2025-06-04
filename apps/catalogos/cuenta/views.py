@@ -18,7 +18,7 @@ class CuentaApiView(PaginationMixin, APIView):
     """
     Vista para listar todas las cuentas o crear una nueva cuenta
     """
-    permission_classes = [IsAuthenticated, CustomPermission]
+    # permission_classes = [IsAuthenticated, CustomPermission]
     model = Cuenta
 
     @swagger_auto_schema(responses={200: CuentaSerializer(many=True)})
@@ -57,7 +57,7 @@ class CuentaDetails(APIView):
     """
     Vista para obtener, actualizar o eliminar una cuenta especifica.
     """
-    permission_classes = [IsAuthenticated, CustomPermission]
+   # permission_classes = [IsAuthenticated, CustomPermission]
     model = Cuenta
     @swagger_auto_schema(responses={200: CuentaSerializer()})
     def get(self, request, pk):

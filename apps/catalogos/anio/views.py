@@ -6,6 +6,8 @@ from .serializers import AnioSerializer
 from drf_yasg.utils import swagger_auto_schema
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated # Para proteger la vista
+
+#from .. import anio
 from ...permissions import CustomPermission
 from config.utils.Pagination import PaginationMixin
 import logging.handlers
@@ -18,7 +20,7 @@ class AnioApiView(PaginationMixin, APIView):
     """
     Vista para listar todos los anios o crear un nuevo anio
     """
-    permission_classes = [IsAuthenticated, CustomPermission] # Para proteger la vista
+    #permission_classes = [IsAuthenticated, CustomPermission] # Para proteger la vista
     model = Anio # Definiendo el modelo explicitamente
 
     @swagger_auto_schema(responses={200: AnioSerializer(many=True)})
@@ -58,7 +60,7 @@ class AnioDetails(APIView):
     """
     Vista para obtener, actualizar o eliminar un anio especifico.
     """
-    permission_classes =[IsAuthenticated, CustomPermission]
+    #permission_classes =[IsAuthenticated, CustomPermission]
     model = Anio
     @swagger_auto_schema(responses={200: AnioSerializer()})
     def get(self, request, pk):
@@ -122,6 +124,13 @@ class AnioDetails(APIView):
         logger.info("Anio deleted successfully with ID: %s.", pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+class AnioCantidad(APIView):
+    #permission_classes = [IsAuthenticated]  # Mantén los permisos necesarios
+
+    def get(self, request):
+        # Lógica para contar los registros en el modelo
+        cantidad_anios = Anio.objects.count()
+        return Response({'cantidad_anios': cantidad_anios}, status=status.HTTP_200_OK)
 
 
 

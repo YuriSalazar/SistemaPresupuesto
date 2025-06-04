@@ -123,3 +123,11 @@ class PresupuestoDetails(APIView):
         presupuesto.save()
         logger.info("Presupuesto deleted successfully with ID: %s", pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class PresupuestoCantidad(APIView):
+    permission_classes = [IsAuthenticated]  # Mantén los permisos necesarios
+
+    def get(self, request):
+        # Lógica para contar los presupuestos grabados
+        cantidad_presupuestos = Presupuesto.objects.count()
+        return Response({'cantidad_Presupuestos': cantidad_presupuestos}, status=status.HTTP_200_OK)

@@ -1,4 +1,5 @@
 from rest_framework.views import APIView
+from django.db.models import Sum, Count
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
@@ -23,7 +24,7 @@ class EjecucionPresupuestoAPIView(PaginationMixin, APIView):
     """
     Vista para listar todos las ejecuciones presupuestarias o crear nuevas ejecuciones en las cuentas.
     """
-    permission_classes = [IsAuthenticated, CustomPermission]
+    #permission_classes = [IsAuthenticated, CustomPermission]
     model = EjecucionPresupuesto
 
     @swagger_auto_schema(responses={200: EjecucionPresupuestoSerializer(many=True)})
@@ -83,7 +84,7 @@ class EjecucionPresupuestoDetails(APIView):
     """
     Vista para obtener, actualizar o eliminar una ejecucion del presupuesto especifica.
     """
-    permission_classes = [IsAuthenticated, CustomPermission]
+    #permission_classes = [IsAuthenticated, CustomPermission]
     model = EjecucionPresupuesto
 
     @swagger_auto_schema(responses={204: 'No Content'})
@@ -107,7 +108,7 @@ class EjecucionPresupuestoReporte(PaginationMixin, APIView):
     """
     Vista para listar todos las ejecuciones presupuestarias.
     """
-    permission_classes = [IsAuthenticated, CustomPermission]
+    #permission_classes = [IsAuthenticated, CustomPermission]
     model = EjecucionPresupuesto
 
     @swagger_auto_schema(responses={200: EjecucionPresupuestoSerializer(many=True)})
@@ -154,7 +155,7 @@ class EjecucionPresupuestoDetailsReporte(APIView):
     """
     Vista para obtener los detalles de la ejecucion de un presupuesto específico junto con sus detalles (maestro-detalle).
     """
-    permission_classes = [IsAuthenticated, CustomPermission]
+    #permission_classes = [IsAuthenticated, CustomPermission]
     model = EjecucionPresupuesto
 
     def get(self, request, ejecucionpresupuesto_id):
@@ -190,5 +191,90 @@ class EjecucionPresupuestoDetailsReporte(APIView):
             return Response({"error": "Error ejecutando el procedimiento almacenado"}, status=500)
 
 
+class ReporteAgrupadoAPIView(APIView):
+    """
+    Vista para agrupar y sumar los gastos por mes, gerencia o cuenta según los parámetros proporcionados.
+    """
+    #permission_classes = [IsAuthenticated]
+    def get(self, request):
+        # Obtener el parámetro 'tipo' desde la query string
+        tipo = request.query_params.get('tipo', '').lower()  # Valor predeterminado vacío
+        # Verificar el valor del tipo y aplicar la agrupación adecuada
+        if tipo == 'mes':
+            datos = (
+                DetalleEjecucionPresupuesto.objects.filter(estado=1)
+                .values('mes__id', 'mes__descripcion')  # Usamos el ID solo para ordenar
+                .annotate(total_gasto=Sum('montoreal'))
+                .order_by('mes__id')  # Ordenamos por ID de mes
+            )
+            # Eliminamos el ID de la respuesta final
+            datos = [{'mes': item['mes__descripcion'], 'total_gasto': item['total_gasto']} for item in datos]
+            return Response(datos, status=status.HTTP_200_OK)
+        elif tipo == 'gerencia':
+            datos = (
+                DetalleEjecucionPresupuesto.objects.filter(
+                    estado=1,
+                    ejecucionpresupuesto__estado=1
+                )
+                .values('ejecucionpresupuesto__gerencia__id', 'ejecucionpresupuesto__gerencia__descripcion')  # Usamos el ID solo para ordenar
+                .annotate(total_gasto=Sum('montoreal'))
+                .order_by('ejecucionpresupuesto__gerencia__id')  # Ordenamos por ID de gerencia
+            )
+            # Eliminamos el ID de la respuesta final
+            datos = [{'gerencia': item['ejecucionpresupuesto__gerencia__descripcion'], 'total_gasto': item['total_gasto']} for item in datos]
+            return Response(datos, status=status.HTTP_200_OK)
+        elif tipo == 'cuenta':
+            datos = (
+                DetalleEjecucionPresupuesto.objects.filter(
+                    estado=1,
+                    ejecucionpresupuesto__estado=1
+                )
+                .values('ejecucionpresupuesto__cuenta__id', 'ejecucionpresupuesto__cuenta__descripcion')  # Usamos el ID solo para ordenar
+                .annotate(total_gasto=Sum('montoreal'))
+                .order_by('ejecucionpresupuesto__cuenta__id')  # Ordenamos por ID de cuenta
+            )
+            # Eliminamos el ID de la respuesta final
+            datos = [{'cuenta': item['ejecucionpresupuesto__cuenta__descripcion'], 'total_gasto': item['total_gasto']} for item in datos]
+            return Response(datos, status=status.HTTP_200_OK)
+        else:
+            return Response(
+                {"error": "Parámetro 'tipo' no válido. Use 'mes', 'gerencia' o 'cuenta'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
+class CantidadRegistrosPorMes(APIView):
+    """
+    Vista para listar los gastos totales por mes.
+    """
+    #permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        try:
+            # Consulta y agrupación
+            datos = (
+                DetalleEjecucionPresupuesto.objects.filter(
+                    estado=1,  # Detalles activos
+                    ejecucionpresupuesto__estado=1  # Movimientos activos
+                )
+                .values(
+                    'mes__id',
+                    'mes__descripcion'
+                )
+                .annotate(cantidad_registros_del_mes=Count('montoreal'))
+                .order_by('mes__id')
+            )
+
+            # Eliminar 'movimientocuenta__gerencia__id' de la salida final
+            resultado = [
+                {
+                    "mes_descripcion": item["mes__descripcion"],
+                    "cantidad_registros_del_mes": item["cantidad_registros_del_mes"]
+                }
+                for item in datos
+            ]
+
+            # Retorno de los datos
+            return Response(resultado, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"Error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
